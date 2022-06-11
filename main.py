@@ -1,26 +1,30 @@
 import asyncio
-import time
 import curses
-from types import coroutine
+from random import randint
+import time
 
 
 async def blink(canvas, row, column, symbol='*'):
     while True:
         canvas.addstr(row, column, symbol, curses.A_DIM)
-        await asyncio.sleep(0)
-
+        for _ in range(randint(1, 20)):
+            await asyncio.sleep(0)
+        
         canvas.addstr(row, column, symbol)
-        await asyncio.sleep(0)
-
+        for _ in range(randint(1, 20)):
+            await asyncio.sleep(0)
+       
         canvas.addstr(row, column, symbol, curses.A_BOLD)
-        await asyncio.sleep(0)
-
+        for _ in range(randint(1, 20)):
+            await asyncio.sleep(0)
+       
         canvas.addstr(row, column, symbol)
-        await asyncio.sleep(0)
+        for _ in range(randint(1, 20)):
+            await asyncio.sleep(0)
+        
 
 
 def draw(canvas):
-    # row, column = (5, 20)
     star1_blink = blink(canvas, row=5, column=20)
     star2_blink = blink(canvas, row=5, column=25)
     star3_blink = blink(canvas, row=5, column=30)
@@ -37,18 +41,12 @@ def draw(canvas):
 
     curses.curs_set(False)
     canvas.border()
-
+    
     while True:
         for coroutine in coroutines:
-            canvas.refresh()
-            try:
-                coroutine.send(None)
-            except StopIteration:
-                coroutines.reverse(coroutine)
-        if len(coroutines) == 0:
-            break
-
-    time.sleep(1)
+            coroutine.send(None)
+        canvas.refresh()
+        time.sleep(0.1)
     
 
 if __name__ == '__main__':
