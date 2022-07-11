@@ -1,54 +1,61 @@
 import asyncio
-import time
 import curses
-from types import coroutine
+from random import choice, randint
+import time
+
+from fire_animation import fire
+
+
+STARS = '+*.:'
 
 
 async def blink(canvas, row, column, symbol='*'):
     while True:
         canvas.addstr(row, column, symbol, curses.A_DIM)
-        await asyncio.sleep(0)
-
+        for _ in range(randint(1, 20)):
+            await asyncio.sleep(0)
+        
         canvas.addstr(row, column, symbol)
-        await asyncio.sleep(0)
-
+        for _ in range(randint(1, 20)):
+            await asyncio.sleep(0)
+       
         canvas.addstr(row, column, symbol, curses.A_BOLD)
-        await asyncio.sleep(0)
-
+        for _ in range(randint(1, 20)):
+            await asyncio.sleep(0)
+       
         canvas.addstr(row, column, symbol)
-        await asyncio.sleep(0)
+        for _ in range(randint(1, 20)):
+            await asyncio.sleep(0)
+        
 
 
 def draw(canvas):
-    # row, column = (5, 20)
-    star1_blink = blink(canvas, row=5, column=20)
-    star2_blink = blink(canvas, row=5, column=25)
-    star3_blink = blink(canvas, row=5, column=30)
-    star4_blink = blink(canvas, row=5, column=35)
-    star5_blink = blink(canvas, row=5, column=40)
+    x, y = canvas.getmaxyx()
+    coroutines = []
 
-    coroutines = [
-        star1_blink,
-        star2_blink,
-        star3_blink,
-        star4_blink,
-        star5_blink,
-        ]
+    fire_coroutine = fire(canvas, start_row=x-2, start_column=y//2)
+
+    for _ in range(100):
+        coroutines.append(blink(canvas, row=randint(1, x - 2), column=randint(1, y - 2), symbol=choice(STARS)))
 
     curses.curs_set(False)
     canvas.border()
-
+    
     while True:
-        for coroutine in coroutines:
-            canvas.refresh()
-            try:
-                coroutine.send(None)
-            except StopIteration:
-                coroutines.reverse(coroutine)
-        if len(coroutines) == 0:
-            break
 
-    time.sleep(1)
+        for coroutine in coroutines:
+            coroutine.send(None)
+        canvas.refresh()
+
+        try:
+            fire_coroutine.send(None)
+        except StopIteration:
+            fire_coroutine = fire(canvas, start_row=x-2, start_column=y//2)
+
+        canvas.refresh()
+        time.sleep(0.1)
+
+        
     
 
 if __name__ == '__main__':
