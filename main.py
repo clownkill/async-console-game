@@ -4,7 +4,7 @@ from itertools import cycle
 from random import choice, randint
 import time
 
-from courses_tools import draw_frame
+from courses_tools import draw_frame, read_controls
 from fire_animation import fire
 
 
@@ -35,12 +35,30 @@ async def blink(canvas, row, column, symbol="*"):
 async def animate_spaceship(canvas, row, column, frames):
     frames = cycle(frames)
     frame = next(frames)
-    
+    canvas.nodelay(True)
+
     while True:
         draw_frame(canvas, row, column, frame, negative=True)
+
+        r_direction, c_direction, space_pressed = read_controls(canvas)
+        row += r_direction
+        column += c_direction
+        draw_frame(
+            canvas,
+            row,
+            column,
+            frame,
+            negative=True,
+        )
         frame = next(frames)
-        draw_frame(canvas, row, column, frame)
+        draw_frame(
+            canvas,
+            row,
+            column,
+            frame
+        )
         canvas.refresh()
+
         await asyncio.sleep(0)
 
 
@@ -73,6 +91,7 @@ def draw(canvas):
 
     curses.curs_set(False)
     canvas.border()
+    canvas.nodelay(True)
 
     while True:
 
