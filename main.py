@@ -1,5 +1,6 @@
 import asyncio
 import curses
+from itertools import cycle
 from random import choice, randint
 import time
 
@@ -7,10 +8,12 @@ from courses_tools import draw_frame
 from fire_animation import fire
 
 
-STARS = '+*.:'
+STARS = "+*.:"
+STAR_COUNT = 100
+TIC_TIMEOUT = 0.1
 
 
-async def blink(canvas, row, column, symbol='*'):
+async def blink(canvas, row, column, symbol="*"):
     while True:
         canvas.addstr(row, column, symbol, curses.A_DIM)
         for _ in range(randint(1, 20)):
@@ -29,18 +32,44 @@ async def blink(canvas, row, column, symbol='*'):
             await asyncio.sleep(0)
 
 
+async def animate_spaceship(canvas, row, column, frames):
+    frames = cycle(frames)
+    while True:
+        draw_frame(canvas, row, column, next(frames), negative=True)
+        draw_frame(canvas, row, column, next(frames))
+        await asyncio.sleep(0)
+
+        draw_frame(canvas, row, column, next(frames))
+        draw_frame(canvas, row, column, next(frames), negative=True)
+        await asyncio.sleep(0)
+
+
 def draw(canvas):
+    with open("animation/rocket_frame_1.txt", "r") as f1, open(
+        "animation/rocket_frame_2.txt", "r"
+    ) as f2:
+        frames = (f1.read(), f2.read())
+
     x, y = canvas.getmaxyx()
     coroutines = []
 
-    fire_coroutine = fire(canvas, start_row=x//2, start_column=y//2)
+    x_ship = x // 2
+    y_ship = y // 2 - 2
+    spaceship_coroutine = animate_spaceship(canvas, x_ship, y_ship, frames)
+    coroutines.append(spaceship_coroutine)
 
-    for _ in range(100):
+    fire_coroutine = fire(canvas, start_row=x // 2, start_column=y // 2)
+    coroutines.append(fire_coroutine)
+
+    for _ in range(STAR_COUNT):
         coroutines.append(
-            blink(canvas, row=randint(1, x - 2),
-                  column=randint(1, y - 2),
-                  symbol=choice(STARS))
+            blink(
+                canvas,
+                row=randint(1, x - 2),
+                column=randint(1, y - 2),
+                symbol=choice(STARS),
             )
+        )
 
     curses.curs_set(False)
     canvas.border()
@@ -48,18 +77,15 @@ def draw(canvas):
     while True:
 
         for coroutine in coroutines:
-            coroutine.send(None)
-        canvas.refresh()
-
-        try:
-            fire_coroutine.send(None)
-        except StopIteration:
-            fire_coroutine = fire(canvas, start_row=x//2, start_column=y//2)
+            try:
+                coroutine.send(None)
+            except StopIteration:
+                coroutines.remove(coroutine)
 
         canvas.refresh()
-        time.sleep(0.1)
+        time.sleep(TIC_TIMEOUT)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     curses.update_lines_cols()
     curses.wrapper(draw)
