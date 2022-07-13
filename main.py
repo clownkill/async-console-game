@@ -4,13 +4,14 @@ from itertools import cycle
 from random import choice, randint
 import time
 
-from courses_tools import draw_frame, read_controls
+from courses_tools import draw_frame, read_controls, get_frame_size
 from fire_animation import fire
 
 
 STARS = "+*.:"
-STAR_COUNT = 100
+STAR_QUANTITY = 100
 TIC_TIMEOUT = 0.1
+SPACESHIP_SPEED = 5
 
 
 async def blink(canvas, row, column, symbol="*"):
@@ -32,17 +33,32 @@ async def blink(canvas, row, column, symbol="*"):
             await asyncio.sleep(0)
 
 
-async def animate_spaceship(canvas, row, column, frames):
-    frames = cycle(frames)
-    frame = next(frames)
-    canvas.nodelay(True)
+async def animate_spaceship(canvas, y, x, frames):
+    frameset = cycle(frames)
+    frame = next(frameset)
+
+    row = x // 2 - 2
+    column = y // 2 - 2
+
+    framesize = get_frame_size(frame)
+    length, width = framesize
 
     while True:
         draw_frame(canvas, row, column, frame, negative=True)
 
-        r_direction, c_direction, space_pressed = read_controls(canvas)
+        r_direction, c_direction, space_pressed = read_controls(canvas, direction_size=SPACESHIP_SPEED)
         row += r_direction
         column += c_direction
+
+        if row + length >= x:
+            row = x - length - 1
+        if column + width >= y:
+            column = y - width - 1
+        if row - length < -length:
+            row = 1
+        if column - width < -width + 1:
+            column = 1
+
         draw_frame(
             canvas,
             row,
@@ -50,19 +66,19 @@ async def animate_spaceship(canvas, row, column, frames):
             frame,
             negative=True,
         )
-        frame = next(frames)
-        draw_frame(
-            canvas,
-            row,
-            column,
-            frame
-        )
+        frame = next(frameset)
+        draw_frame(canvas, row, column, frame)
         canvas.refresh()
 
         await asyncio.sleep(0)
 
 
 def draw(canvas):
+    curses.curs_set(False)
+    canvas.border()
+    canvas.nodelay(True)
+    canvas.refresh()
+
     with open("animation/rocket_frame_1.txt", "r") as f1, open(
         "animation/rocket_frame_2.txt", "r"
     ) as f2:
@@ -71,15 +87,13 @@ def draw(canvas):
     x, y = canvas.getmaxyx()
     coroutines = []
 
-    x_ship = x // 2 - 2
-    y_ship = y // 2 - 2
-    spaceship_coroutine = animate_spaceship(canvas, x_ship, y_ship, frames)
+    spaceship_coroutine = animate_spaceship(canvas, y, x, frames)
     coroutines.append(spaceship_coroutine)
 
     fire_coroutine = fire(canvas, start_row=x // 2, start_column=y // 2)
     coroutines.append(fire_coroutine)
 
-    for _ in range(STAR_COUNT):
+    for _ in range(STAR_QUANTITY):
         coroutines.append(
             blink(
                 canvas,
@@ -89,19 +103,13 @@ def draw(canvas):
             )
         )
 
-    curses.curs_set(False)
-    canvas.border()
-    canvas.nodelay(True)
-
     while True:
-
         for coroutine in coroutines:
             try:
                 coroutine.send(None)
             except StopIteration:
                 coroutines.remove(coroutine)
 
-        canvas.refresh()
         time.sleep(TIC_TIMEOUT)
 
 
