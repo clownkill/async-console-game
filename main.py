@@ -1,6 +1,7 @@
 import asyncio
 import curses
 from itertools import cycle
+from operator import neg
 from random import choice, randint
 import time
 
@@ -33,30 +34,17 @@ async def blink(canvas, row, column, symbol="*"):
 
 
 async def animate_spaceship(canvas, y, x, frames):
-    frameset = cycle(frames)
-    frame = next(frameset)
-
     row = x // 2 - 2
     column = y // 2 - 2
 
-    framesize = get_frame_size(frame)
-    length, width = framesize
+    last_frame = None
 
-    while True:
-        draw_frame(
-            canvas,
-            row,
-            column,
-            frame,
-            negative=True
-        )
-
+    for frame in cycle(frames):
         r_direction, c_direction, space_pressed = read_controls(
             canvas,
             direction_size=SPACESHIP_SPEED
         )
-        row += r_direction
-        column += c_direction
+        length, width = get_frame_size(frame)
 
         if row + length >= x:
             row = x - length - 1
@@ -70,24 +58,29 @@ async def animate_spaceship(canvas, y, x, frames):
         if column - width < -width + 1:
             column = 1
 
+        if last_frame:
+            draw_frame(
+                canvas,
+                row,
+                column,
+                last_frame,
+                negative=True,
+            )
+
+        row += r_direction
+        column += c_direction
+
         draw_frame(
             canvas,
             row,
             column,
             frame,
-            negative=True,
         )
 
-        frame = next(frameset)
-        draw_frame(
-            canvas,
-            row,
-            column,
-            frame
-        )
+        last_frame = frame
 
-        canvas.refresh()
-        await asyncio.sleep(0)
+        for _ in range(2):
+            await asyncio.sleep(0)
 
 
 def draw(canvas):
@@ -125,7 +118,7 @@ def draw(canvas):
         )
 
     while True:
-        for coroutine in coroutines:
+        for coroutine in coroutines.copy():
             try:
                 coroutine.send(None)
             except StopIteration:
