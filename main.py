@@ -87,7 +87,6 @@ def draw(canvas):
     curses.curs_set(False)
     canvas.border()
     canvas.nodelay(True)
-    canvas.refresh()
 
     with open("animation/rocket_frame_1.txt", "r") as f1, open(
         "animation/rocket_frame_2.txt", "r"
@@ -124,6 +123,7 @@ def draw(canvas):
             except StopIteration:
                 coroutines.remove(coroutine)
 
+        canvas.refresh()
         time.sleep(TIC_TIMEOUT)
 
 
