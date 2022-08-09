@@ -2,6 +2,7 @@ import asyncio
 import curses
 from itertools import cycle
 from operator import neg
+import os
 from random import choice, randint
 import time
 
@@ -88,10 +89,16 @@ def draw(canvas):
     canvas.border()
     canvas.nodelay(True)
 
-    with open("animation/rocket_frame_1.txt", "r") as f1, open(
-        "animation/rocket_frame_2.txt", "r"
-    ) as f2:
-        frames = (f1.read(), f2.read())
+    frames = []
+    animation_path = './animation/'
+    for file in os.listdir(animation_path):
+        with open(animation_path + file, 'r') as f:
+            frame = f.read()
+            frames.append(frame)
+    # with open("animation/rocket_frame_1.txt", "r") as f1, open(
+    #     "animation/rocket_frame_2.txt", "r"
+    # ) as f2:
+    #     frames = (f1.read(), f2.read())
 
     x, y = canvas.getmaxyx()
     coroutines = []
