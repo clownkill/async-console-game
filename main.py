@@ -42,8 +42,7 @@ async def animate_spaceship(canvas, y, x, frames):
 
     for frame in cycle(frames):
         r_direction, c_direction, space_pressed = read_controls(
-            canvas,
-            direction_size=SPACESHIP_SPEED
+            canvas, direction_size=SPACESHIP_SPEED
         )
         length, width = get_frame_size(frame)
 
@@ -59,28 +58,28 @@ async def animate_spaceship(canvas, y, x, frames):
         if column - width < -width + 1:
             column = 1
 
-        if last_frame:
+        for _ in range(2):
+            if last_frame:
+                draw_frame(
+                    canvas,
+                    row,
+                    column,
+                    last_frame,
+                    negative=True,
+                )
+            await asyncio.sleep(0)
+
+            row += r_direction
+            column += c_direction
+
             draw_frame(
                 canvas,
                 row,
                 column,
-                last_frame,
-                negative=True,
+                frame,
             )
 
-        row += r_direction
-        column += c_direction
-
-        draw_frame(
-            canvas,
-            row,
-            column,
-            frame,
-        )
-
-        last_frame = frame
-
-        for _ in range(2):
+            last_frame = frame
             await asyncio.sleep(0)
 
 
@@ -90,15 +89,11 @@ def draw(canvas):
     canvas.nodelay(True)
 
     frames = []
-    animation_path = './animation/'
+    animation_path = "./animation/"
     for file in os.listdir(animation_path):
-        with open(animation_path + file, 'r') as f:
+        with open(animation_path + file, "r") as f:
             frame = f.read()
             frames.append(frame)
-    # with open("animation/rocket_frame_1.txt", "r") as f1, open(
-    #     "animation/rocket_frame_2.txt", "r"
-    # ) as f2:
-    #     frames = (f1.read(), f2.read())
 
     x, y = canvas.getmaxyx()
     coroutines = []
@@ -106,11 +101,7 @@ def draw(canvas):
     spaceship_coroutine = animate_spaceship(canvas, y, x, frames)
     coroutines.append(spaceship_coroutine)
 
-    fire_coroutine = fire(
-        canvas,
-        start_row=x // 2,
-        start_column=y // 2
-    )
+    fire_coroutine = fire(canvas, start_row=x // 2, start_column=y // 2)
     coroutines.append(fire_coroutine)
 
     for _ in range(STAR_QUANTITY):
