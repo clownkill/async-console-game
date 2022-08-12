@@ -1,7 +1,6 @@
 import asyncio
 import curses
 from itertools import cycle
-from operator import neg
 import os
 from random import choice, randint
 import time
@@ -35,16 +34,17 @@ async def blink(canvas, row, column, symbol="*"):
 
 
 async def animate_spaceship(canvas, y, x, frames):
-    row = x // 2 - 2
-    column = y // 2 - 2
+    length, width = get_frame_size(frames[0])
 
-    last_frame = None
+    row = x // 2
+    column = y // 2 - width // 2
 
     for frame in cycle(frames):
         r_direction, c_direction, space_pressed = read_controls(
             canvas, direction_size=SPACESHIP_SPEED
         )
-        length, width = get_frame_size(frame)
+        row += r_direction
+        column += c_direction
 
         if row + length >= x:
             row = x - length - 1
@@ -59,25 +59,13 @@ async def animate_spaceship(canvas, y, x, frames):
             column = 1
 
         for _ in range(2):
-            if last_frame:
-                draw_frame(
-                    canvas,
-                    row,
-                    column,
-                    last_frame,
-                    negative=True,
-                )
-            row += r_direction
-            column += c_direction
-            await asyncio.sleep(0)
-
             draw_frame(
                 canvas,
                 row,
                 column,
                 frame,
+                negative=_,
             )
-            last_frame = frame
             await asyncio.sleep(0)
 
 
@@ -88,8 +76,8 @@ def draw(canvas):
 
     frames = []
     animation_path = "./animation/"
-    for file in os.listdir(animation_path):
-        with open(animation_path + file, "r") as f:
+    for file_name in os.listdir(animation_path):
+        with open(animation_path + file_name, "r") as f:
             frame = f.read()
             frames.append(frame)
 
