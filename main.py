@@ -43,8 +43,6 @@ async def animate_spaceship(canvas, y, x, frames):
         r_direction, c_direction, space_pressed = read_controls(
             canvas, direction_size=SPACESHIP_SPEED
         )
-        row += r_direction
-        column += c_direction
 
         if row + length >= x:
             row = x - length - 1
@@ -59,6 +57,8 @@ async def animate_spaceship(canvas, y, x, frames):
             column = 1
 
         for _ in range(2):
+            row += r_direction
+            column += c_direction
             draw_frame(
                 canvas,
                 row,
