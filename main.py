@@ -40,23 +40,23 @@ async def animate_spaceship(canvas, y, x, frames):
     column = y // 2 - width // 2
 
     for frame in cycle(frames):
-        r_direction, c_direction, space_pressed = read_controls(
-            canvas, direction_size=SPACESHIP_SPEED
-        )
-
-        if row + length >= x:
-            row = x - length - 1
-
-        if column + width >= y:
-            column = y - width - 1
-
-        if row - length < -length:
-            row = 1
-
-        if column - width < -width + 1:
-            column = 1
-
         for _ in range(2):
+            r_direction, c_direction, space_pressed = read_controls(
+                canvas, direction_size=SPACESHIP_SPEED
+            )
+
+            if row + length >= x:
+                row = x - length - 1
+
+            if column + width >= y:
+                column = y - width - 1
+
+            if row - length < -length:
+                row = 1
+
+            if column - width < -width + 1:
+                column = 1
+
             row += r_direction
             column += c_direction
             draw_frame(
@@ -66,6 +66,7 @@ async def animate_spaceship(canvas, y, x, frames):
                 frame,
                 negative=_,
             )
+
             await asyncio.sleep(0)
 
 
